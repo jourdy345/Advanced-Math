@@ -67,8 +67,9 @@ AR_t_generate <- function(N, r) {
 
   # Find the upper bound
   M <- optimize(objective_function, c(-10, 10), maximum = TRUE)$objective
-  temp <- c(0)
-  for (i in 1:N) {
+  temp <- c()
+
+  while (length(temp) < (N)) {
     # CDF of Cauchy is F = 1/pi * arctan(x) + 1/2
     # Inverse of Cauchy is F^(-1) = tan(pi * (y - 1/2))
     # Apply probabiliy integral transform
@@ -78,44 +79,37 @@ AR_t_generate <- function(N, r) {
     # Accept-Reject algorithm
     U2 <- runif(1)
     if (M * U2 <= objective_function(cauchy_rand)) {
-      temp[i] <- cauchy_rand
-    } else {
-      temp[i] <- NA
+      temp <- c(temp, cauchy_rand)
     }
   }
-
-  # Remove NAs before returning
-  return(na.omit(temp))
+  return(temp)
 }
-t_rand <- AR_t_generate(1000, 2)
+t_rand <- AR_t_generate(1000, 30)
 
 # Conduct Kolmogorov-Smirnov test to check if this is actually the targeted distribution
-true_t <- rt(length(t_rand), 2)
+true_t <- rt(length(t_rand), 30)
 library(stats)
 ks.test(t_rand, true_t)
 
 # Plot the histogram and the true pdf to check
-hist(t_rand, probability = TRUE, ylab = '', main = 't-distribution with r = 2')
-curve(dt(x, 2), add = TRUE)
+hist(t_rand, probability = TRUE, ylab = '', main = 't-distribution with r = 30')
+curve(dt(x, 30), add = TRUE)
 
 # 4.8.20
 beta_generate <- function(N, alpha, beta) {
   if (alpha <= 0 | beta <= 0) stop('alpha and beta have to be greater than 0')
 
-  X <- c(0)
-  for (i in 1:N) {
+  X <- c()
+  while (length(X) < N) {
     U1 <- runif(1); U2 <- runif(1)
     V1 <- U1^(1/alpha); V2 <- U2^(1/beta)
     W <- V1 + V2
 
     if (W <= 1) {
-      X[i] <- V1/W
-    } else {
-      X[i] <- NA
+      X <- c(X, V1/W)
     }
   }
-
-  return(na.omit(X))
+  return(X)
 }
 
 beta_rand <- beta_generate(1000, 3, 2)
@@ -125,25 +119,23 @@ true_beta <- rbeta(length(beta_rand), 3, 2)
 ks.test(beta_rand, true_beta)
 
 # Plot the histogram and the true pdf to check
-hist(beta_rand, probability = TRUE, ylab = '', main = expression(past('Beta distribution ', alpha, =3 , beta, '=2')))
+hist(beta_rand, probability = TRUE, ylab = '', main = expression(paste('Beta distribution ', alpha, '=3 ', beta, '=2')))
 curve(dbeta(x, 3, 2), add = TRUE)
 
 
 # 4.8.21
 MB_normal_generate <- function(N) {
   # Marsaglia and Bray algorithm
-  X <- matrix(0, nrow = N, ncol = 2)
-  for (i in 1:N) {
+  X <- matrix(0, nrow = 1, ncol = 2)
+  while (nrow(X) < N+1) {
     U <- runif(1, -1, 1); V <- runif(1, -1, 1)
     W <- U^2 + V^2
-    if (W > 1) {
-      X[i, ] <- NA
-    } else {
+    if (W <= 1) {
       Z <- sqrt(-2 * log(W) / W)
-      X[i,] <- c(U*Z, V*Z)
+      X <- rbind(X, c(U*Z, V*Z))
     }
   }
-  return(X[complete.cases(X), ])
+  return(X[2:(N+1), ])
 }
 MB_normal <- MB_normal_generate(1000)
 hist(MB_normal, probability = TRUE)
@@ -156,8 +148,8 @@ AR_normal_generate <- function(N) {
   objective_function <- function(x) 1 / sqrt(2 * pi) * exp(-x^2 / 2) * pi * (1 + x^2)
   # Find the upper bound
   M <- optimize(objective_function, c(-10, 10), maximum = TRUE)$objective
-  temp <- c(0)
-  for (i in 1:N) {
+  temp <- c()
+  while (length(temp) < N) {
     # CDF of Cauchy is F = 1/pi * arctan(x) + 1/2
     # Inverse of Cauchy is F^(-1) = tan(pi * (y - 1/2))
     # Apply probabiliy integral transform
@@ -167,13 +159,10 @@ AR_normal_generate <- function(N) {
     # Accept-Reject algorithm
     U2 <- runif(1)
     if (M * U2 <= objective_function(cauchy_rand)) {
-      temp[i] <- cauchy_rand
-    } else {
-      temp[i] <- NA
+      temp <- c(temp, cauchy_rand)
     }
   }
-  # Remove NAs before returning
-  return(na.omit(temp))
+  return(temp)
 }
 AR_normal <- AR_normal_generate(1000)
 hist(AR_normal, probability = TRUE)
@@ -199,3 +188,29 @@ curve(dnorm(x), add = TRUE)
 # There are several algorithms you can choose from which default to 'INVERSION'.
 # INVERSION method seems to be referring to inverse transform but the CDF of Normal distribution
 # does not have a closed inverse form..... Failed to crack the code.
+
+
+# <10>
+# (a)
+mixture_DE_generate <- function(N) {
+  X <- c()
+  while (length(X) < N) {
+    s <- rexp(1, 1/2)
+    Z <- rnorm(1, 0, sqrt(s))
+    X <- c(X, Z)
+  }
+  return(X)
+}
+mix_DE_rand <- mixture_DE_generate(1000)
+
+# (b)
+Y1 <- rexp(1000, 1)
+Y2 <- rexp(1000, 1)
+laplace_rand <- Y1 - Y2
+
+# Choose South Korea mirror, index = 62
+chooseCRANmirror(ind = 62)
+install.packages('VGAM')
+library(VGAM)
+
+true_laplace <- rlaplace(1000, 0, 1)
