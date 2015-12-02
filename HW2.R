@@ -1,6 +1,7 @@
 # 3.4.26
 # (a)
 st_norm_monte_carlo <- function(x, N) {
+  if (x < 0) stop('x should be greate than or equal to zero.')
   X <- rnorm(N, 0, 1)
   count <- length(X[X >= x | X <= -x])
   return(count/N)
@@ -41,12 +42,22 @@ cont_normal_cdf <- function(q, eps, sigma, lower.tail = TRUE) {
 
 cont_normal_cdf(-2, 0.15, 10) + cont_normal_cdf(2, 0.15, 10, lower.tail = FALSE)
 
+# sample
+st norm sample <− rnorm(100)
+cont norm sample <− cont normal generate(100, 0.15, 10)
+
+
 # (c)
 cont_normal_cdf(-2, 0.15, 20) + cont_normal_cdf(2, 0.15, 20, lower.tail = FALSE)
 
 # (d)
 cont_normal_cdf(-2, 0.25, 20) + cont_normal_cdf(2, 0.25, 20, lower.tail = FALSE)
 
+cont_normal_cdf(-2, 0.15, 10) + cont_normal_cdf(2, 0.15, 10, lower.tail = FALSE)
+x <− seq(-6, 6, 0.1)
+par(mfrow = c(2, 2))
+plot(x, dnorm(x), type = 'l', ylab = '', main = 'Standard Normal pdf')
+plot(x, cont normal_pdf(x, 0.15, 10), type = 'l', ylab = '', main = expression(paste(epsilon, '=0.15 ', sigma, '=10')))
 
 
 # 3.4.27
@@ -55,7 +66,10 @@ par(mfrow = c(2, 2))
 plot(x, cont_normal_pdf(x, 0.15, 10), type = 'l', ylab = '', main = expression(paste(epsilon, '=0.15 ', sigma, '=10')))
 plot(x, cont_normal_pdf(x, 0.15, 20), type = 'l', ylab = '', main = expression(paste(epsilon, '=0.15 ', sigma, '=20')))
 plot(x, cont_normal_pdf(x, 0.25, 20), type = 'l', ylab = '', main = expression(paste(epsilon, '=0.25 ', sigma, '=20')))
-
+plot(x, dnorm(x), type = 'n', ylab = '', main = 'Overlapped plot')
+lines(x, dnorm(x), type = 'l', col = 'blue', ylab = '', main = 'Overlapped plot')
+lines(x, cont_normal_pdf(x, 0.15, 10), type = 'l', col = 'red' )
+legend('topright', lty = c(1, 1), col = c('blue', 'red'), legend = c('Standard', 'Contaminated'))
 
 # 4.8.19
 AR_t_generate <- function(N, r) {
@@ -92,8 +106,10 @@ library(stats)
 ks.test(t_rand, true_t)
 
 # Plot the histogram and the true pdf to check
+par(mfrow = c(1, 1))
 hist(t_rand, probability = TRUE, ylab = '', main = 't-distribution with r = 30')
-curve(dt(x, 30), add = TRUE)
+curve(dt(x, 30), col = 'blue', lwd = 2, add = TRUE)
+legend('topright', lty = 1, col = 'blue', legend = 'true t')
 
 # 4.8.20
 beta_generate <- function(N, alpha, beta) {
@@ -119,8 +135,10 @@ true_beta <- rbeta(length(beta_rand), 3, 2)
 ks.test(beta_rand, true_beta)
 
 # Plot the histogram and the true pdf to check
-hist(beta_rand, probability = TRUE, ylab = '', main = expression(paste('Beta distribution ', alpha, '=3 ', beta, '=2')))
-curve(dbeta(x, 3, 2), add = TRUE)
+par(mfrow = c(1, 1))
+hist(beta_rand, probability = TRUE, ylab = '', ylim = c(0, 2), main = expression(paste('Beta distribution ', alpha, '=3, ', beta, '=2')))
+curve(dbeta(x, 3, 2), col = 'blue', lwd = 2, add = TRUE)
+legend('topright', lty = 1, col = 'blue', legend = 'true beta')
 
 
 # 4.8.21
@@ -137,9 +155,6 @@ MB_normal_generate <- function(N) {
   }
   return(X[2:(N+1), ])
 }
-MB_normal <- MB_normal_generate(1000)
-hist(MB_normal, probability = TRUE)
-curve(dnorm(x), add = TRUE)
 
 AR_normal_generate <- function(N) {
   # Rejection sampling algorithm
@@ -164,9 +179,6 @@ AR_normal_generate <- function(N) {
   }
   return(temp)
 }
-AR_normal <- AR_normal_generate(1000)
-hist(AR_normal, probability = TRUE)
-curve(dnorm(x), add = TRUE)
 
 BM_normal_generate <- function(N) {
   # Box-Muller transform
@@ -178,9 +190,30 @@ BM_normal_generate <- function(N) {
   }
   return(X)
 }
+
+# Sample
+MB_normal <- MB_normal_generate(1000)
+AR_normal <- AR_normal_generate(1000)
 BM_normal <- BM_normal_generate(1000)
-hist(BM_normal, probability = TRUE)
-curve(dnorm(x), add = TRUE)
+true_normal <- rnorm(1000)
+
+# Plot
+par(mfrow = c(2, 2))
+hist(MB_normal, probability = TRUE, main = 'Marsaglia and Bray')
+curve(dnorm(x), col = 'blue', lwd = 2, add = TRUE)
+legend('topright', col = 'blue', lty = 1, legend = 'true Gaussian')
+
+hist(AR_normal, probability = TRUE, main = 'Accept-Reject')
+curve(dnorm(x), col = 'blue', lwd = 2, add = TRUE)
+legend('topright', col ='blue', lty = 1, legend = 'true Gaussian')
+
+hist(BM_normal, probability = TRUE, main = 'Box-Muller')
+curve(dnorm(x), col = 'blue', lwd = 2, add = TRUE)
+legend('topright', col = 'blue', lty = 1, legend = 'true Gaussian')
+
+hist(true_normal, probability = TRUE, main = 'Built-in')
+curve(dnorm(x), col = 'blue', lwd = 2, add = TRUE)
+legend('topright', col = 'blue', lty = 1, legend = 'true Gaussian')
 
 
 # The algorithm of the built-in function 'pnorm' can be found here:
@@ -208,9 +241,37 @@ Y1 <- rexp(1000, 1)
 Y2 <- rexp(1000, 1)
 laplace_rand <- Y1 - Y2
 
-# Choose South Korea mirror, index = 62
-chooseCRANmirror(ind = 62)
-install.packages('VGAM')
-library(VGAM)
+# command 'require' returns TRUE/FALSE depending on whether the package is installed
+# check if {VGAM} is installed and install if there isn't
+if (!require(VGAM)) {
+  # Get user permission
+  user_response <- readline(prompt = '{VGAM} will be downloaded. Press y to continue or n to stop. (y/n)')
+  if (user_response == 'y') {
+    # Choose South Korea mirror, index = 62
+    chooseCRANmirror(ind = 62)
+
+    install.packages('VGAM')
+    library(VGAM)
+  } else if (user_response == 'n') {
+    stop('No permission to proceed.')
+  } else {
+    stop('Wrong input. Please answer with y/n')
+  }
+} else {
+  library(VGAM)  
+}
 
 true_laplace <- rlaplace(1000, 0, 1)
+
+par(mfrow = c(2, 2))
+hist(mix_DE_rand, probability = TRUE, ylim = c(0, 0.5), main = 'Double Exponential by Mixture')
+curve(dlaplace(x), col = 'blue', lwd = 2, add = TRUE)
+legend('topright', col = 'blue', lty = 1, legend = 'true laplace')
+
+hist(laplace_rand, probability = TRUE, ylim = c(0, 0.5), main = 'Dist. of the difference of two Exp')
+curve(dlaplace(x), col = 'blue', lwd = 2, add = TRUE)
+legend('topright', col = 'blue', lty = 1, legend = 'true laplace')
+
+hist(true_laplace, probability = TRUE, ylim = c(0, 0.5), main = 'Package Double exponential')
+curve(dlaplace(x), col = 'blue', lwd = 2, add = TRUE)
+legend('topright', col = 'blue', lty = 1, legend = 'true laplace')
